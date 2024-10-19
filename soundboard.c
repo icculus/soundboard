@@ -260,7 +260,7 @@ static void RenderWaveform(const WaveData *wav, const int w, const int h, const 
 
     const int channels = 2;
     const float *buffer = wav->buffer;
-    const int ticks_available = wav->total_ticks - elapsed;
+    const int ticks_available = (int) (wav->total_ticks - elapsed);
     const float frames_per_ms = 44100.0f / 1000.0f;
     const int elapsed_frame_offset = (int) (frames_per_ms * ((float) elapsed));
     const int available_frame_offset = (int) (frames_per_ms * ((float) ticks_available));
@@ -347,8 +347,8 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     }
 
     if (failure_string) {
-        const float x = (winw - (SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE * SDL_strlen(failure_string))) / 2;
-        const float y = (winh - (SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE)) / 2;
+        const float x = (float) ((winw - (SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE * SDL_strlen(failure_string))) / 2);
+        const float y = (float) ((winh - (SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE)) / 2);
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderDebugText(renderer, x, y, failure_string);
     }
