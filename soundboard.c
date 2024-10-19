@@ -262,15 +262,16 @@ static void RenderWaveform(const WaveData *wav, const int w, const int h, const 
     const float *buffer = wav->buffer;
     const int ticks_available = wav->total_ticks - elapsed;
     const float frames_per_ms = 44100.0f / 1000.0f;
-    const int frame_offset = (int) (frames_per_ms * ((float) ticks_available));
+    const int elapsed_frame_offset = (int) (frames_per_ms * ((float) elapsed));
+    const int available_frame_offset = (int) (frames_per_ms * ((float) ticks_available));
     const int frame_size = (int) (sizeof (float) * channels);
-    const int available = frame_offset * frame_size;
+    const int available = SDL_min(available_frame_offset * frame_size, wav->buffer_len);
     const int buflen = SDL_min(available, 4096 * sizeof (float) * channels);
 
     if (buffer && buflen) {
         SDL_FPoint *points = SDL_stack_alloc(SDL_FPoint, w + 2);
         if (points) {
-            buffer = (const float *) (((const Uint8 *) wav->buffer) + available);
+            buffer = (const float *) (((const Uint8 *) wav->buffer) + (elapsed_frame_offset * frame_size));
             const int frames = (buflen / sizeof (float)) / channels;
             const int skip = frames / (w * 2);
             float prevx = 0.0f;
