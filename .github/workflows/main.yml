@@ -19,7 +19,7 @@ jobs:
       with:
         version: sdl3-head
     - name: Get soundboard sources
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Configure CMake
       run: cmake -B build ${{ matrix.platform.flags }}
     - name: Build
