@@ -63,29 +63,6 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
         }
     }
 
-    int num_sticks = 0;
-    SDL_JoystickID *sticks = SDL_GetJoysticks(&num_sticks);
-    num_sticks = SDL_clamp(num_sticks, 0, SDL_arraysize(joysticks));
-
-    bool opened_a_stick = false;
-    for (int i = 0; i < num_sticks; i++) {
-        joysticks[i] = SDL_OpenJoystick(sticks[i]);
-        if (joysticks[i]) {
-            opened_a_stick = true;
-        }
-    }
-    SDL_free(sticks);
-
-    if (!opened_a_stick) {
-        char *str = SDL_strdup("Didn't open any joystick devices!");
-        SDL_Log("%s", str);
-        if (!failure_string) {
-            failure_string = str;
-        } else {
-            SDL_free(str);
-        }
-    }
-
     bool loaded_a_wav = false;
     for (int i = 0; i < SDL_arraysize(waves); i++) {
         char *path = NULL;
@@ -195,6 +172,11 @@ static void HandleButton(const int button, const bool down)
     }
 
     buttons[button] += down ? 1 : -1;
+
+    if (!down && (buttons[button] < 0)) {
+        buttons[button] = 0;
+    }
+
     if (down && (buttons[button] == 1)) {
         WaveData *wav = &waves[button];
         if (wav->stream) {
@@ -232,6 +214,32 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
             const int button = (int) event->jbutton.button;
             const bool down = event->jbutton.down;
             HandleButton(button, down);
+            break;
+        }
+
+        case SDL_EVENT_JOYSTICK_ADDED: {
+            for (int i = 0; i < SDL_arraysize(joysticks); i++) {
+                if (joysticks[i] == NULL) {
+                    joysticks[i] = SDL_OpenJoystick(event->jdevice.which);
+                    if (joysticks[i]) {
+                        joystick_count++;
+                    }
+                    break;
+                }
+            }
+            break;
+        }
+
+        case SDL_EVENT_JOYSTICK_REMOVED: {
+            for (int i = 0; i < SDL_arraysize(joysticks); i++) {
+                if (joysticks[i] && (SDL_GetJoystickID(joysticks[i]) == event->jdevice.which)) {
+                    SDL_CloseJoystick(joysticks[i]);
+                    joysticks[i] = NULL;
+                    joystick_count--;
+                    SDL_zeroa(buttons);  // zero out all the buttons, in case one was held down when the stick was lost.
+                    break;
+                }
+            }
             break;
         }
     }
@@ -335,6 +343,14 @@ SDL_AppResult SDL_AppIterate(void *appstate)
         const float y = (float) ((winh - (SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE)) / 2);
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderDebugText(renderer, x, y, failure_string);
+    }
+
+    if (!joystick_count) {
+        const char *errstr = "Didn't open any joystick devices!";
+        const float x = (float) ((winw - (SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE * SDL_strlen(errstr))) / 2);
+        const float y = (float) ((winh - (SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE)) / 4);
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_RenderDebugText(renderer, x, y, errstr);
     }
 
     SDL_RenderPresent(renderer);
