@@ -24,11 +24,10 @@ static char *failure_string = NULL;
 static SDL_Joystick *joysticks[32];
 static WaveData waves[MAX_WAVES];
 static int buttons[MAX_WAVES];
+static int joystick_count = 0;
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
 {
-    SDL_Delay(1000);  // sleep for a second in case other services are chewing the CPU at startup.
-
     Uint32 winflags = SDL_WINDOW_FULLSCREEN;
     SDL_SetAppMetadata("soundboard", "1.0", "org.icculus.soundboard");
 
@@ -38,32 +37,17 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
         }
     }
 
-    if (!SDL_Init(SDL_INIT_VIDEO)) {
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK)) {
         SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
-//SDL_Delay(1000);
 
-    if (!SDL_Init(SDL_INIT_AUDIO)) {
-        SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
-        return SDL_APP_FAILURE;
-    }
-//SDL_Delay(1000);
-
-    if (!SDL_Init(SDL_INIT_JOYSTICK)) {
-        SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
-        return SDL_APP_FAILURE;
-    }
-//SDL_Delay(1000);
+    SDL_HideCursor();
 
     if (!SDL_CreateWindowAndRenderer("Soundboard", 640, 480, winflags, &window, &renderer)) {
         SDL_Log("Couldn't create window/renderer: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
-
-//SDL_Delay(1000);
-
-    SDL_HideCursor();
 
     SDL_SetRenderVSync(renderer, 1);
 
